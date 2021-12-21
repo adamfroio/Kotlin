@@ -8,7 +8,8 @@ private const val TAVERN_NAME = "$TAVERN_MASTER's Folly"
 private val firstNames = setOf("Alex", "Mordoc", "Sophie", "Tariq")
 private val lastNames = setOf("Ironfoot", "Fernsworth", "Baggins", "Downstrider")
 
-private val menuData = File("data/tavern-menu-data.txt")
+private val menuData = File("NyetHack/data/tavern-menu-data.txt")   // Surface
+//private val menuData = File("data/tavern-menu-data.txt")  // Alienware
     .readText()
     .split("\n")
 
@@ -17,16 +18,15 @@ private val menuItems = List(menuData.size) { index ->
     name
 }
 
-private val menuPrices = List(menuData.size) { index ->
-    val (_, _, price) = menuData[index].split(",")
-    price
-}
+private val menuItemPrices: Map<String, Double> = List(menuData.size) { index ->
+    val (_, name, price) = menuData[index].split(",")
+    name to price.toDouble()
+}.toMap()
 
-private val menuTypes = List(menuData.size) { index ->
-    val (type, _, _) = menuData[index].split(",")
-    type
-}
-
+private val menuItemTypes: Map<String, String> = List(menuData.size) { index ->
+    val (type, name, _) = menuData[index].split(",")
+    name to type
+}.toMap()
 
 
 fun visitTavern () {
@@ -53,9 +53,10 @@ fun visitTavern () {
     repeat(3) {
         placeOrder(patrons.random(), menuItems.random(), patronGold)
     }
-    println(patronGold)
 
+//    printMenu()
 
+    displayPatronBalances(patronGold)
 }
 
 
@@ -64,15 +65,28 @@ private fun placeOrder(
     menuItemName: String,
     patronGold: MutableMap<String, Double>
 ) {
-    val itemPrice = 1.0
+    val itemPrice = menuItemPrices.getValue(menuItemName)
     narrate("$patronName places an order with $TAVERN_MASTER.")
     if (itemPrice <= patronGold.getOrDefault(patronName, 0.0)) {
-        narrate("$TAVERN_MASTER hands $patronName a plate of $menuItemName.")
+        val action = when (menuItemTypes[menuItemName]) {
+            "shandy", "elixir" -> "pours"
+            "meal" -> "serves"
+            else -> "hands"
+        }
+        narrate("$TAVERN_MASTER $action $patronName a $menuItemName")
         narrate("$patronName pays $TAVERN_MASTER $itemPrice gold")
         patronGold[patronName] = patronGold.getValue(patronName) - itemPrice
         patronGold[TAVERN_MASTER] = patronGold.getValue(TAVERN_MASTER) + itemPrice
     } else {
         narrate("$TAVERN_MASTER says, \"You need more coin for a $menuItemName\"")
+    }
+
+}
+
+private fun displayPatronBalances(patronGold: Map<String, Double>) {
+    narrate("$heroName intuitively knows how much money each patron has")
+    patronGold.forEach { (patron, balance) ->
+        narrate("$patron has ${"%.2f".format(balance)} gold")
     }
 }
 
@@ -81,10 +95,20 @@ private fun placeOrder(
 // Chapter 9 Challenges
 fun printMenu() {
 
-    //Chapter 9 Challenges
     var longestItem = 0
     var numItems = 0
     var longestLine = 0
+
+    val menuPrices = List(menuData.size) { index ->
+        val (_, _, price) = menuData[index].split(",")
+        price
+    }
+
+    val menuTypes = List(menuData.size) { index ->
+        val (type, _, _) = menuData[index].split(",")
+        type
+    }
+
 
     // get longest menu item
     menuItems.forEach { item ->
