@@ -1,5 +1,7 @@
 
 import java.io.File
+import kotlin.random.Random
+import kotlin.random.nextInt
 
 
 private const val TAVERN_MASTER = "Taernyl"
@@ -8,25 +10,21 @@ private const val TAVERN_NAME = "$TAVERN_MASTER's Folly"
 private val firstNames = setOf("Alex", "Mordoc", "Sophie", "Tariq")
 private val lastNames = setOf("Ironfoot", "Fernsworth", "Baggins", "Downstrider")
 
-private val menuData = File("NyetHack/data/tavern-menu-data.txt")   // Surface
-//private val menuData = File("data/tavern-menu-data.txt")  // Alienware
+//private val menuData = File("NyetHack/data/tavern-menu-data.txt")   // Surface
+private val menuData = File("data/tavern-menu-data.txt")  // Alienware
     .readText()
     .split("\n")
+    .map { it.split(",") }
 
-private val menuItems = List(menuData.size) { index ->
-    val (_, name, _) = menuData[index].split(",")
-    name
+private val menuItems = menuData.map { (_, name, _) -> name }
+
+private val menuItemPrices = menuData.associate { (_, name, price) ->
+    name to price.toDouble()
 }
 
-private val menuItemPrices: Map<String, Double> = List(menuData.size) { index ->
-    val (_, name, price) = menuData[index].split(",")
-    name to price.toDouble()
-}.toMap()
-
-private val menuItemTypes: Map<String, String> = List(menuData.size) { index ->
-    val (type, name, _) = menuData[index].split(",")
-    name to type
-}.toMap()
+private val menuItemTypes = menuData.associate { (type, name, _)  ->
+        name to type
+}
 
 
 fun visitTavern () {
@@ -35,30 +33,49 @@ fun visitTavern () {
 
      narrate(menuItems.joinToString())
 
-    val patrons: MutableSet<String> = mutableSetOf()
+    val patrons: MutableSet<String> = firstNames.shuffled()
+        .zip(lastNames.shuffled()) { firstName,lastName -> "$firstName $lastName"}
+        .toMutableSet()
+
     val patronGold = mutableMapOf(
         TAVERN_MASTER to 86.0,
-        heroName to 4.50
+        heroName to 4.50,
+        *patrons.map { it to 6.00 }.toTypedArray()
     )
-
-    while (patrons.size < 5) {
-        val patronName = "${firstNames.random()} ${lastNames.random()}"
-        patrons += patronName
-        patronGold += patronName to 6.0
-    }
 
     narrate("$heroName sees several patrons in the tavern:")
     narrate(patrons.joinToString())
+
+    val itemOfDay = patrons.flatMap { getFavoriteMenuItems(it) }.random()
+    narrate("The item of the day is the $itemOfDay")
 
     repeat(3) {
         placeOrder(patrons.random(), menuItems.random(), patronGold)
     }
 
-//    printMenu()
-
     displayPatronBalances(patronGold)
+
+    val departingPatrons: List<String> = patrons
+        .filter { patron -> patronGold.getOrDefault(patron, 0.0) < 4.0 }
+    patrons -= departingPatrons
+    patronGold -= departingPatrons
+    departingPatrons.forEach { patron ->
+        narrate("$heroName sees $patron departing the tavern")
+    }
+
+    narrate("There are still some patrons in the tavern")
+    narrate(patrons.joinToString())
+
 }
 
+private fun getFavoriteMenuItems(patron: String): List<String> {
+    return when (patron) {
+        "Alex Ironfoot" -> menuItems.filter {menuItem ->
+            menuItemTypes[menuItem]?.contains("dessert") == true
+        }
+        else -> menuItems.shuffled().take(Random.nextInt(1..2))
+    }
+}
 
 private fun placeOrder(
     patronName: String,
@@ -88,105 +105,4 @@ private fun displayPatronBalances(patronGold: Map<String, Double>) {
     patronGold.forEach { (patron, balance) ->
         narrate("$patron has ${"%.2f".format(balance)} gold")
     }
-}
-
-
-
-// Chapter 9 Challenges
-fun printMenu() {
-
-    var longestItem = 0
-    var numItems = 0
-    var longestLine = 0
-
-    val menuPrices = List(menuData.size) { index ->
-        val (_, _, price) = menuData[index].split(",")
-        price
-    }
-
-    val menuTypes = List(menuData.size) { index ->
-        val (type, _, _) = menuData[index].split(",")
-        type
-    }
-
-
-    // get longest menu item
-    menuItems.forEach { item ->
-        if (item.length > longestItem) {
-            longestItem = item.length
-        }
-        numItems++
-    }
-
-    // get longest menu line (item + price)
-    var i = 0
-    while (i < numItems) {
-        if (menuItems[i].length + menuPrices[i].length - 1 > longestLine) {
-            longestLine = menuItems[i].length + menuPrices[i].length
-        }
-        i++
-    }
-
-    println("\r\n*** Welcome to $TAVERN_NAME ***")
-    i = 0
-    var menuType = "shandy"
-    var typePadding = (longestLine - menuType.length) / 2
-    println(" ".repeat(typePadding) + "~[$menuType]~")
-    while (i < numItems) {
-        if (menuTypes[i].lowercase() == menuType) {
-            var lineLength = menuItems[i].length + menuPrices[i].trim().length
-            var lineDiff = longestLine - lineLength
-            println(menuItems[i] + ".".repeat(lineDiff + 5) + menuPrices[i])
-        }
-        i++
-    }
-    i = 0
-    menuType = "elixir"
-    typePadding = (longestLine - menuType.length) / 2
-    println(" ".repeat(typePadding) + "~[$menuType]~")
-    while (i < numItems) {
-        if (menuTypes[i].lowercase() == menuType) {
-            var lineLength = menuItems[i].length + menuPrices[i].trim().length
-            var lineDiff = longestLine - lineLength
-            println(menuItems[i] + ".".repeat(lineDiff + 5) + menuPrices[i])
-        }
-        i++
-    }
-    i = 0
-    menuType = "meal"
-    typePadding = (longestLine - menuType.length) / 2
-    println(" ".repeat(typePadding) + "~[$menuType]~")
-    while (i < numItems) {
-        if (menuTypes[i].lowercase() == menuType) {
-            var lineLength = menuItems[i].length + menuPrices[i].trim().length
-            var lineDiff = longestLine - lineLength
-            println(menuItems[i] + ".".repeat(lineDiff + 5) + menuPrices[i])
-        }
-        i++
-    }
-    i = 0
-    menuType = "desert dessert"
-    typePadding = (longestLine - menuType.length) / 2
-    println(" ".repeat(typePadding) + "~[$menuType]~")
-    while (i < numItems) {
-        if (menuTypes[i].lowercase() == menuType) {
-            var lineLength = menuItems[i].length + menuPrices[i].trim().length
-            var lineDiff = longestLine - lineLength
-            println(menuItems[i] + ".".repeat(lineDiff + 5) + menuPrices[i])
-        }
-        i++
-    }
-    i = 0
-    menuType = "deserved dessert"
-    typePadding = (longestLine - menuType.length) / 2
-    println(" ".repeat(typePadding) + "~[$menuType]~")
-    while (i < numItems - 1) {
-        if (menuTypes[i].lowercase() == menuType) {
-            var lineLength = menuItems[i].length + menuPrices[i].trim().length
-            var lineDiff = longestLine - lineLength
-            println(menuItems[i] + ".".repeat(lineDiff + 5) + menuPrices[i])
-        }
-        i++
-    }
-
 }
