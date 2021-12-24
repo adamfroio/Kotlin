@@ -39,6 +39,25 @@ class Player(
         else -> "The Renowned"
     }
 
+
+    val prophecy by lazy {
+        narrate("$name embarks on an arduous quest to locate a fortune teller")
+        Thread.sleep(3000)
+        narrate(("The fortune teller bestows a fortune upon $name"))
+
+        "An intepid hero from $hometown shall some day " + listOf(
+            "form an unlikely bond between two warring factions",
+            "take possession of an otherworldly blade",
+            "bring the gift of creation back to the world",
+            "best the world-eater"
+        ).random()
+    }
+
+    fun prophesize() {
+        narrate("$name thinks about their future")
+        narrate("A fortune teller told Madrical, \"$prophecy\"")
+    }
+
     fun castFireball(numFireballs: Int = 2) {
         narrate("A glass of Fireball springs into existence (x$numFireballs)")
     }
