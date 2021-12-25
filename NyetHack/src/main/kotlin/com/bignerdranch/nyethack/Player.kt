@@ -1,10 +1,11 @@
 package com.bignerdranch.nyethack
+
 class Player(
     initialName: String,
     val hometown: String = "Neversummer",
-    var healthPoints: Int,
+    override var healthPoints: Int,
     val isImmortal: Boolean
-) {
+) : Fightable {
 
     constructor(name: String) : this(
         initialName = name,
@@ -17,7 +18,7 @@ class Player(
     }
 
 
-    var name = initialName
+    override var name = initialName
     get() = field.replaceFirstChar { it.uppercase() }
     private set(value) {
         field = value.trim()
