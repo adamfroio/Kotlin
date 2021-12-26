@@ -10,7 +10,8 @@ private const val TAVERN_NAME = "$TAVERN_MASTER's Folly"
 private val firstNames = setOf("Alex", "Mordoc", "Sophie", "Tariq")
 private val lastNames = setOf("Ironfoot", "Fernsworth", "Baggins", "Downstrider")
 
-private val menuData = File("data/tavern-menu-data.txt")
+private val menuData = File("Nyethack/data/tavern-menu-data.txt") // Surface
+//private val menuData = File("data/tavern-menu-data.txt")  // Alien
     .readText()
     .split("\n")
     .map { it.split(",") }
